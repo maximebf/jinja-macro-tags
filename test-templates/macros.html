@@ -1,0 +1,11 @@
+
+{% macro button(label, style="default") -%}
+    <button type="button" class="btn btn-{{ style }}">{{ label }}</button>
+{%- endmacro %}
+
+{% macro panel(title) -%}
+    <div class="panel">
+        <div class="panel-title">{{ title }}</div>
+        <div class="panel-body">{{ caller() }}</div>
+    </div>
+{%- endmacro %}
