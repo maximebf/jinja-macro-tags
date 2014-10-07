@@ -15,6 +15,7 @@ class JinjaMacroTagTestCase(unittest.TestCase):
         self.env.add_extension(CallMacroTagExtension)
         self.env.add_extension(JinjaMacroTagsExtension)
         self.env.add_extension(HtmlMacroTagsExtension)
+        self.env.autoload_macro_tags = True
 
     def test_register_macro_from_template(self):
         self.env.macros.register_from_template("macros.html")
@@ -39,7 +40,6 @@ class JinjaMacroTagTestCase(unittest.TestCase):
         self.assert_html(tpl.render())
 
     def assert_html(self, html):
-        print html
         self.assertIn('<div class="panel-title">test panel</div>', html)
         self.assertIn('<div><button type="button" class="btn btn-default">click me</button></div>', html)
         self.assertIn('<button type="button" class="btn btn-primary">click me</button>', html)

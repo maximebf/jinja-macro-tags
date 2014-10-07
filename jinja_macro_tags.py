@@ -5,15 +5,18 @@ import re
 import os
 
 
-def configure_environment(env, wrap_loader=True, with_jinja_tags=True, with_html_tags=True):
+def configure_environment(env, wrap_loader=True, with_jinja_tags=True, with_html_tags=False):
     if wrap_loader:
         env.loader = MacroLoader(env.loader)
     env.add_extension(LoadMacroExtension)
-    env.add_extension(CallMacroTagExtension)
+    if with_jinja_tags or with_html_tags:
+        env.add_extension(CallMacroTagExtension)
     if with_jinja_tags:
         env.add_extension(JinjaMacroTagsExtension)
     if with_html_tags:
         env.add_extension(HtmlMacroTagsExtension)
+    if with_jinja_tags or with_html_tags:
+        env.autoload_macro_tags = True
 
 
 def parse_macro_tag_signature(parser):
@@ -61,7 +64,7 @@ class MacroLoader(ChoiceLoader):
 
 
 class MacroRegistry(object):
-    macro_regexp = re.compile(r"\{% macro ([a-zA-Z_0-9]+)")
+    macro_regexp = re.compile(r"\{%\s*macro\s+([a-zA-Z_0-9]+)")
 
     def __init__(self, environment):
         super(MacroRegistry, self).__init__()
@@ -194,27 +197,36 @@ class CallMacroTagExtension(Extension):
         return nodes.Output([call])
 
 
-class JinjaMacroTagsExtension(Extension):
+class MacroTagsExtension(Extension):
+    def __init__(self, environment):
+        super(MacroTagsExtension, self).__init__(environment)
+        environment.extend(autoload_macro_tags=False)
+
+
+class JinjaMacroTagsExtension(MacroTagsExtension):
     tag_regexp = re.compile(r"<\{\s*([a-zA-Z_0-9]+)")
     close_block_regexp = re.compile(r"</\{(\s*([a-zA-Z_0-9]+)\s*)?\}>")
 
     def preprocess(self, source, name, filename=None):
-        return preprocess_macro_tags(source, self.tag_regexp, "}/>", "}>", self.close_block_regexp)
+        return preprocess_macro_tags(self.environment, source, self.tag_regexp,
+            "}/>", "}>", self.close_block_regexp)
 
 
-class HtmlMacroTagsExtension(CallMacroTagExtension):
+class HtmlMacroTagsExtension(MacroTagsExtension):
     tag_regexp = re.compile(r"<m:([a-zA-Z_0-9\-]+)")
     close_block_regexp = re.compile(r"</m:([a-zA-Z_0-9\-]+)?>")
 
     def preprocess(self, source, name, filename=None):
-        return preprocess_macro_tags(source, self.tag_regexp, "/>", ">", self.close_block_regexp)
+        return preprocess_macro_tags(self.environment, source, self.tag_regexp,
+            "/>", ">", self.close_block_regexp)
 
 
-def preprocess_macro_tags(source, tag_regexp, tag_closing_char, block_closing_char, close_block_regexp):
+def preprocess_macro_tags(env, source, tag_regexp, tag_closing_char,\
+                          block_closing_char,close_block_regexp):
     macros = set()
     source = replace_macro_tags(source, tag_regexp, tag_closing_char, block_closing_char, macros)
     source = close_block_regexp.sub(r"{% endmacrotag %}", source)
-    if macros:
+    if macros and env.autoload_macro_tags:
         source = "{%% load_macro %s %%}\n%s" % (", ".join(macros), source)
     return source
 
