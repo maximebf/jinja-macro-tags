@@ -170,8 +170,12 @@ class LoadMacroExtension(Extension):
             name, tpl = self.environment.macros.resolve(arg.name)
             if name is None:
                 continue
-            templates.setdefault(tpl, set())
-            templates[tpl].add(name)
+            if tpl == parser.name:
+                # macro definition is in the same file as macro call, nothing to import
+                pass
+            else:
+                templates.setdefault(tpl, set())
+                templates[tpl].add(name)
 
         imports = []
         for tpl, macros in templates.iteritems():
