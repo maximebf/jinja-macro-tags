@@ -144,7 +144,7 @@ class LoadMacroExtension(Extension):
         environment.extend(macros=MacroRegistry(environment))
 
     def parse(self, parser):
-        lineno = parser.stream.next().lineno
+        lineno = next(parser.stream).lineno
 
         args = []
         require_comma = False
@@ -178,7 +178,7 @@ class LoadMacroExtension(Extension):
                 templates[tpl].add(name)
 
         imports = []
-        for tpl, macros in templates.iteritems():
+        for tpl, macros in templates.items():
             imports.append(nodes.FromImport(nodes.Const(tpl), macros, True, lineno=lineno))
 
         return imports
@@ -189,9 +189,9 @@ class CallMacroTagExtension(Extension):
 
     def parse(self, parser):
         is_block = parser.stream.current.test("name:call_macro_tag")
-        lineno = parser.stream.next().lineno
+        lineno = next(parser.stream).lineno
         macro_name = self.environment.macros.resolve_alias(parser.stream.current.value)
-        parser.stream.next()
+        next(parser.stream)
         args, kwargs = parse_macro_tag_signature(parser)
 
         call = nodes.Call(nodes.Name(macro_name, "load"), args, kwargs, None, None, lineno=lineno)
