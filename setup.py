@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='jinja-macro-tags',
-    version='0.1',
+    version='0.2',
     url='http://github.com/frascoweb/jinja-macro-tags',
     license='MIT',
     author='Maxime Bouroumeau-Fuseau',
